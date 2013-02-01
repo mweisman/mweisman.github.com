@@ -1,0 +1,214 @@
+<!doctype html>  
+<html lang="en">
+	
+	<head>
+		<meta charset="utf-8">
+		
+		<title>GDB Flee</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		
+		<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+		
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', use the PDF print sheet -->
+		<script>
+			document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+	
+	<body>
+	    <div class="reveal">
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+				    <h1>GDB Flee</h1>
+					<h3>Your data wants to get out!</h3>
+					<img src="img/icon.png" height=50% />
+				</section>
+				<section>
+				    <h2>Problem</h2>
+				    Shapefiles kinda suck
+				    <img src="img/shp_dir.png" />
+				</section>
+				<section>
+				    <h3>Solution</h3>
+				    The Future is here!
+				    <img src="img/gdb.png" />
+				</section>
+                <section>
+                    <h2>Solution to the "solution"?</h2>
+					<img src="img/ogr_drv.png" />
+				</section>
+				<section>
+				    <h2>Sounds harmless</h2>
+				    <img src="img/uh-oh.png" />
+				</section>
+				<section>
+				    <h2>Take I: Unlocking as a Service (UaaS™)</h2>
+				    <img src="img/take1.png" />
+				</section>
+				<section>
+				    <h2>Opening a File Geodatabase in Python</h2>
+				    <ul>
+				        <li class="fragment"><a href="http://pypi.python.org/pypi/GDAL/">OGR SWIG API</a></li>
+				        <li class="fragment"><a href="http://toblerity.github.com/fiona/">Fiona</a></li>
+				        <li class="fragment"><a href="http://docs.python.org/2/c-api/">Write Python Module in 100 lines of C</a></li>
+				    </ul>
+				</section>
+				<section>
+				    <h2>Python C API</h2>
+				    <pre><code>static PyObject* fgdb_convert(PyObject *self, PyObject *args, PyObject *keywds) {
+    // Fetch inputs from python
+    char *gdb;
+    char *gdb_name;
+    char *out_format;
+    char *out_path;
+    
+    static char *kwlist[] = {"gdb", "gdb_name", "out_format", "out_path", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ssss", kwlist,
+                        &gdb, &gdb_name, &out_format, &out_path)) {
+        return NULL;
+    }
+    // Do something with OGR
+}</code></pre>
+<pre><code>fgdb.convert(gdb_location, gdb_name, format, out_path)</pre></code>
+				</section>
+				<section>
+				    <h2><a href="http://flask.pocoo.org">Flask</a></h2>
+                    <pre><code>from flask import Flask
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "Hello World!"
+
+if __name__ == "__main__":
+    app.run()</code></pre>
+                </section>
+				<section>
+				    <h2>Problems</h2>
+				        Written in a single weekend
+				        <br />
+				        <div class="fragment">
+    				        <img src="img/cloud.png" size=75% />
+	    			        <img src="img/cat_cloud.jpg" />
+	    			    </div>
+				</section>
+				<section>
+				    <h2>Take II: Local Conversion</h2>
+				    <ul>
+				        <li class="fragment">Core conversion code nearly identical to Take I</li>
+				        <li class="fragment">Native OS X app (Written in Cocoa/Objective-C)</li>
+				        <li class="fragment">Complies with App Store rules</li>
+				        <li class="fragment">Takes advantage of XPC (more on that in a bit)</li>
+				    </ul>
+				    <img class="fragment" src="img/gdbflee_app.png" />
+				</section>
+				<section>
+				    <h2>XPC?</h2>
+				    <img src="img/act_mon.png" />
+				</section>
+				<section>
+				    <h2>@Protocol</h2>
+				    <h3>(Allegedly roughly equivalent to a Java Interface)</h3>
+				    <pre><code>@protocol OGR
+-(void)driverForFileAtLocation:(NSString *)fileLocation
+      reply:(void (^)(OGRResponse *ogrr))reply;
+
+-(void)convertFileAtLocation:(NSString *)fileLocation
+                     toFormat:(NSString *)format
+                   toLocation:(NSString *)outLocation
+            reply:(void (^)(OGRResponse *ogrr))reply;
+@end</pre></code>
+                    <pre class="fragment"><code class="objectivec">@interface OGRAgent : NSObject &lt;NSXPCListenerDelegate, OGR&gt;</pre></code>
+                </section>
+                <section>
+                    <h2>Messaging a Remote Object</h2>
+                    <pre><code>NSXPCConnection *convertConnection = [[NSXPCConnection alloc] initWithServiceName:@"com.mweisman.OGRService"];
+    convertConnection.remoteObjectInterface = [NSXPCInterface interfaceWithProtocol:@protocol(OGR)];</pre></code>
+                    <br /><br />
+                    <pre class="fragment"><code class="objectivec">id &lt;OGR&gt; ogrConversionAgent = [convertConnection remoteObjectProxyWithErrorHandler:^(NSError *err) {
+    // This block will execute if something goes wrong in the Agent
+}];</code></pre>
+                    <pre class="fragment"><code class="objectivec">[ogrConversionAgent convertFileAtLocation:gdbFilePath
+                    toFormat:fmt
+                    toLocation:out_path
+                    reply:^(OGRResponse *ogrr){
+    // This block will execute when com.mweisman.OGRService returns
+}];</code></pre>
+                </section>
+                <section>
+                    <h2>Live Demo</h2>
+                    <img src="img/cat_crash.jpg" />
+                </section>
+                <section>
+                    <h2>What Next?</h2>
+                    <ul>
+                        <li class="fragment">UI looks like it designed by me</li>
+                        <li class="fragment">Release in App Store?</li>
+                        <li class="fragment">Rip out OGR XPC Agent and make a simple geo translation framework for any OS X 10.8+ (and likely iOS 7+) app?</li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Further Reading</h2>
+                    <ul>
+                        <li><a href="https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/ProgrammingWithObjectiveC/Introduction/Introduction.html#//apple_ref/doc/uid/TP40011210">Programming with Objective-C</a></li>
+                        <li><a href="https://developer.apple.com/videos/wwdc/2012/?id=241">Cocoa Interprocess Communication with XPC</a> (Requires Apple Dev account)</li>
+                        <li><a href="http://en.wikipedia.org/wiki/The_C_Programming_Language">K&R</a></li>
+                        <li><a href="http://shop.oreilly.com/product/0636920025108.do">21st Century C</a></li>
+                        <li><a href="http://oleb.net/blog/2012/10/remote-view-controllers-in-ios-6/">XPC on iOS</a></li>
+                        <li><a href="http://www.gdal.org/ogr/ogr__api_8h.html">OGR C API</a></li>
+                    </ul>
+                </section>
+                <section>
+                    <h2>Questions</h2>
+                </section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+			
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: false,
+				progress: true,
+				history: true,
+				
+				theme: Reveal.getQueryHash().theme || 'default', // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/none
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/highlight.js', async: true, callback: function() { window.hljs.initHighlightingOnLoad(); } },
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'lib/js/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'lib/js/data-markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/zoom-js/zoom.js', condition: function() { return !!document.body.classList; } },
+					{ src: '/socket.io/socket.io.js', async: true, condition: function() { return window.location.host === 'localhost:1947'; } },
+					{ src: 'plugin/speakernotes/client.js', async: true, condition: function() { return window.location.host === 'localhost:1947'; } }
+				]
+			});
+			
+		</script>
+
+	</body>
+</html>
